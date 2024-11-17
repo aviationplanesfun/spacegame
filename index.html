@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Space Simulator</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      z-index: 10;
+    }
+    #rocket-builder {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .part {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      padding: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h1>Rocket Simulator</h1>
+    <p>Press Space to Launch!</p>
+    <p id="stats">Altitude: 0, Velocity: 0</p>
+  </div>
+  <div id="rocket-builder">
+    <div class="part" draggable="true" id="engine">Engine</div>
+    <div class="part" draggable="true" id="fuel">Fuel Tank</div>
+    <div class="part" draggable="true" id="capsule">Capsule</div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Lighting
+    const light = new THREE.PointLight(0xffffff, 1, 100);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
+    // Rocket Placeholder
+    const rocketParts = [];
+    const addPart = (name) => {
+      const geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 32);
+      const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+      const part = new THREE.Mesh(geometry, material);
+      part.name = name;
+      part.position.y = rocketParts.length * 2;
+      rocketParts.push(part);
+      scene.add(part);
+      return part;
+    };
+
+    // Drag-and-Drop Rocket Builder
+    document.querySelectorAll('.part').forEach((el) => {
+      el.addEventListener('dragstart', () => {
+        const partName = el.id;
+        addPart(partName);
+      });
+    });
+
+    // Ground and Starfield
+    const groundGeometry = new THREE.PlaneGeometry(100, 100);
+    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x444444 });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    const starGeometry = new THREE.SphereGeometry(500, 64, 64);
+    const starMaterial = new THREE.MeshBasicMaterial({
+      map: new THREE.TextureLoader().load('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Starsinthesky.jpg/1024px-Starsinthesky.jpg'),
+      side: THREE.BackSide,
+    });
+    const starField = new THREE.Mesh(starGeometry, starMaterial);
+    scene.add(starField);
+
+    // Planets
+    const planetGeometry = new THREE.SphereGeometry(2, 32, 32);
+    const planetMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+    const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+    planet.position.set(20, 0, -30);
+    scene.add(planet);
+
+    // Camera Setup
+    camera.position.z = 20;
+
+    // Animation Loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Rotate Planet
+      planet.rotation.y += 0.01;
+
+      // Update Rocket Parts
+      rocketParts.forEach((part, i) => {
+        part.position.y = i * 2; // Stack parts dynamically
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
